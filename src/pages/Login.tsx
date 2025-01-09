@@ -4,28 +4,40 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { loginUser } from "@/services/api";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For demo purposes, hardcoded credentials
-    if (username === "admin" && password === "password") {
-      toast({
-        title: "Success",
-        description: "Welcome back!",
-      });
-      navigate("/dashboard");
-    } else {
+    setIsLoading(true);
+
+    try {
+      const response = await loginUser(username, password);
+      
+      if (response.token) {
+        // Store the token in localStorage or a state management solution
+        localStorage.setItem('token', response.token);
+        
+        toast({
+          title: "Success",
+          description: "Welcome back!",
+        });
+        navigate("/dashboard");
+      }
+    } catch (error) {
       toast({
         title: "Error",
         description: "Invalid credentials",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -43,6 +55,7 @@ const Login = () => {
                 placeholder="Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -51,10 +64,11 @@ const Login = () => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full">
-              Login
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
         </CardContent>
